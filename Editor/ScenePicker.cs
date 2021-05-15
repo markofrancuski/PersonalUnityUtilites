@@ -15,13 +15,9 @@ public class ScenePicker : EditorWindow
 
     private void OnGUI()
     {
-        if(GUILayout.Button("Name your Scene"))
+        if (GUILayout.Button("Sample Scene"))
         {
-            //Load Splash Scene
-            EditorSceneManager.OpenScene("PathToYourScene.unity");
+            EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
         }
-
-
-
     }
 }
