@@ -1,3 +1,5 @@
+using System;
+using System.Reflection;
 using UnityEngine;
 using UnityEditor;
 using System.IO;
@@ -28,4 +30,29 @@ public class CustomMenuItemTools
         System.Diagnostics.Process.Start("explorer.exe", dataPath.Replace('/', '\\'));
     }
 
+    [MenuItem("Custom Tools/Check References %UP")]
+    private static void CheckReferences()
+    {
+        MonoBehaviour[] sceneActive = GameObject.FindObjectsOfType<MonoBehaviour>();
+
+        foreach (MonoBehaviour mono in sceneActive)
+        {
+            Type monoType = mono.GetType();
+
+            FieldInfo[] objectFields = monoType.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+            for (int i = 0; i < objectFields.Length; i++)
+            {
+                NotNullable attribute = objectFields[i].GetCustomAttribute<NotNullable>();
+
+                if (attribute != null)
+                {
+                    if (objectFields[i].GetValue(mono) == null)
+                    {
+                        Debug.Log($"GameObject ( {mono.gameObject.name} ) has null reference field ( {objectFields[i].Name} )");
+                    }
+                }
+            }
+        }
+    }
 }
