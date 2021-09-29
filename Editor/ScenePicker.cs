@@ -49,7 +49,10 @@ public class ScenePicker : EditorWindow
             else
             {
                 var file = (FileSystemEntities.File)current;
-                EditorGUILayout.LabelField(file.Name);
+                if (GUILayout.Button(file.Name))
+                {
+                    EditorSceneManager.OpenScene(file.Path);
+                }
             }
         }
 
