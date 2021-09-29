@@ -1,23 +1,17 @@
-using System.IO;
 using System.Collections;
+using System;
 using System.Collections.Generic;
-using UnityEngine;
+using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using UnityEngine;
+using FileSystemEntities;
 
 public class ScenePicker : EditorWindow
 {
-
-    private List<string> _filePaths = new List<string>();
-    private string ABSOLUTE_PROJECT_SCENE_PATH => Application.dataPath + "/Scenes/";
-    private string SCENE_DIRECTORY_PATH => "Assets/Scenes/";
-
-    Dictionary<string, string> _sceneDictionary = new Dictionary<string, string>();
-
-    private void Awake()
-    {
-        LoadAllScenePaths();
-    }
+    private FileSystemTree _fileSystemTree;
+    private Stack<FileSystemEntity> _fileSystemEntities = new Stack<FileSystemEntity>();
 
     [MenuItem("Window/Custom Windows/Scene Picker")]
     public static void ShowWindow()
@@ -27,70 +21,38 @@ public class ScenePicker : EditorWindow
 
     private void OnGUI()
     {
-        GUI.color = Color.magenta;
-        if (GUILayout.Button("Refresh List"))
+        _fileSystemTree = _fileSystemTree ?? new FileSystemTree(Application.dataPath + "/Scenes/");
+
+        if (GUILayout.Button("Refresh"))
         {
-            LoadAllScenePaths();
+            _fileSystemTree.GenerateTreeStructure();
         }
-        GUI.color = Color.white;
 
-        foreach (KeyValuePair<string, string> scene in _sceneDictionary)
+        _fileSystemEntities.Push(_fileSystemTree.Root);
+        while (_fileSystemEntities.Count > 0)
         {
-            if (GUILayout.Button(scene.Key))
+            var current = _fileSystemEntities.Pop();
+
+            EditorGUI.indentLevel = current.IndentLevel;
+
+            if (current is Folder folder)
             {
-                EditorSceneManager.OpenScene(scene.Value);
-            }
-        }
-    }
-
-    private void LoadAllScenePaths()
-    {
-        List<string> _scenePaths = new List<string>();
-        List<string> _sceneNames = new List<string>();
-        
-        foreach (string filePath in Directory.GetFiles(ABSOLUTE_PROJECT_SCENE_PATH))
-        {
-            if(!filePath.Contains(".meta"))
-            {
-                string sceneNameWithExtension = string.Empty;
-
-                int sceneNameStartIndex = 0;
-
-                // Get name of the scenes
-                for (int i = filePath.Length-1; i >= 0; i--)
+                folder.IsFolded = EditorGUILayout.Foldout(folder.IsFolded, current.Name);
+                if (folder.IsFolded)
                 {
-                    if(filePath[i] == '/')
+                    foreach (var entity in _fileSystemTree.GetSubItems(folder.Path))
                     {
-                        // We want not this characters ('/[thisIndex]') index but the previous.
-                        sceneNameStartIndex = i+1;
-                        break;
+                        _fileSystemEntities.Push(entity);
                     }
                 }
-
-                sceneNameWithExtension = filePath.Substring(sceneNameStartIndex, filePath.Length - sceneNameStartIndex);
-
-                _scenePaths.Add(SCENE_DIRECTORY_PATH + sceneNameWithExtension);
-
-                // Parse the string with name and extension to get just the name of the scene.
-                string sceneName = sceneNameWithExtension.Split('.')[0];
-
-                _sceneNames.Add( sceneName );
+            }
+            else
+            {
+                var file = (FileSystemEntities.File)current;
+                EditorGUILayout.LabelField(file.Name);
             }
         }
 
-        if(_sceneNames.Count != _scenePaths.Count)
-        {
-            Debug.LogError($"{_sceneNames.Count} --- {_scenePaths.Count}");
-            return;
-        }
-
-        Dictionary<string, string> sceneDictionary = new Dictionary<string, string>();
-
-        for (int i = 0; i < _sceneNames.Count; i++)
-        {
-            sceneDictionary.Add(_sceneNames[i], _scenePaths[i]);
-        }
-
-        _sceneDictionary = sceneDictionary;
+        EditorGUI.indentLevel = 0;
     }
 }
