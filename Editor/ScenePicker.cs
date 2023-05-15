@@ -51,6 +51,7 @@ public class ScenePicker : EditorWindow
                 var file = (FileSystemEntities.File)current;
                 if (GUILayout.Button(file.Name))
                 {
+                    EditorSceneManager.SaveOpenScenes();
                     EditorSceneManager.OpenScene(file.Path);
                 }
             }
