@@ -1,2 +1,2 @@
 # PersonalUnityUtilites
-Peronal scripts and tools for developing Unity application
+Personal scripts and tools for developing Unity application
